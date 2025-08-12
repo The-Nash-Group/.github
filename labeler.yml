@@ -1,0 +1,132 @@
+# Configuration for actions/labeler
+# Automatically labels PRs based on files changed
+
+# Documentation changes
+documentation:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.md'
+      - 'docs/**'
+      - '.github/**.md'
+
+# Frontend changes
+frontend:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/frontend/**'
+      - 'src/components/**'
+      - '**/*.jsx'
+      - '**/*.tsx'
+      - '**/*.css'
+      - '**/*.scss'
+
+# Backend changes
+backend:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'src/backend/**'
+      - 'src/api/**'
+      - 'src/services/**'
+      - '**/*.go'
+      - '**/*.py'
+
+# Database changes
+database:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'migrations/**'
+      - 'db/**'
+      - '**/*.sql'
+      - '**/schema.*'
+
+# Test changes
+tests:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*test*'
+      - '**/*spec*'
+      - 'tests/**'
+      - '__tests__/**'
+
+# CI/CD changes
+ci/cd:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - 'Dockerfile*'
+      - 'docker-compose*'
+      - '.dockerignore'
+      - 'Makefile'
+
+# Configuration changes
+configuration:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/*.yml'
+      - '**/*.yaml'
+      - '**/*.json'
+      - '**/*.toml'
+      - '.env*'
+      - '**/*config*'
+
+# Security-related changes
+security:
+  - changed-files:
+    - any-glob-to-any-file:
+      - '**/auth/**'
+      - '**/security/**'
+      - '**/*secret*'
+      - '**/*token*'
+      - '**/*key*'
+      - '.github/SECURITY.md'
+      - 'SECURITY.md'
+
+# Dependency updates
+dependencies:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'package.json'
+      - 'package-lock.json'
+      - 'yarn.lock'
+      - 'go.mod'
+      - 'go.sum'
+      - 'requirements.txt'
+      - 'Pipfile*'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+
+# Service-specific labels
+service:gathering:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'services/the-gathering/**'
+      - 'services/gateway/**'
+
+service:prize:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'services/the-prize/**'
+      - 'services/mcp/**'
+
+service:watcher:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'services/the-watcher/**'
+      - 'services/catalog/**'
+
+service:holy-ground:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'services/holy-ground/**'
+      - 'services/secrets/**'
+
+# Infrastructure
+infrastructure:
+  - changed-files:
+    - any-glob-to-any-file:
+      - 'terraform/**'
+      - 'k8s/**'
+      - 'helm/**'
+      - 'ansible/**'
+      - '.github/workflows/**'

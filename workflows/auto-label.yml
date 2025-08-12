@@ -1,0 +1,193 @@
+name: 🏷️ Auto Label Manager
+
+on:
+  issues:
+    types: [opened, edited]
+  pull_request:
+    types: [opened, edited, synchronize]
+  pull_request_target:
+    types: [opened, edited, synchronize]
+
+jobs:
+  label-issues:
+    name: Auto-label Issues
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const title = issue.title.toLowerCase();
+            const body = (issue.body || '').toLowerCase();
+            const labels = [];
+            
+            // Bug-related keywords
+            if (title.includes('bug') || title.includes('error') || title.includes('broken') || 
+                title.includes('fix') || body.includes('steps to reproduce')) {
+              labels.push('bug');
+            }
+            
+            // Feature-related keywords
+            if (title.includes('feature') || title.includes('enhancement') || 
+                title.includes('add') || title.includes('implement')) {
+              labels.push('enhancement');
+            }
+            
+            // Documentation keywords
+            if (title.includes('docs') || title.includes('documentation') || 
+                title.includes('readme') || body.includes('chronicles')) {
+              labels.push('documentation');
+            }
+            
+            // Performance keywords
+            if (title.includes('performance') || title.includes('slow') || 
+                title.includes('optimize') || title.includes('quickening')) {
+              labels.push('performance');
+            }
+            
+            // Security keywords
+            if (title.includes('security') || title.includes('vulnerability') || 
+                title.includes('cve') || body.includes('holy ground')) {
+              labels.push('security');
+              labels.push('priority:high');
+            }
+            
+            // Service-specific labels
+            if (body.includes('the gathering') || body.includes('gateway')) {
+              labels.push('service:gathering');
+            }
+            if (body.includes('the prize') || body.includes('mcp')) {
+              labels.push('service:prize');
+            }
+            if (body.includes('the watcher') || body.includes('catalog')) {
+              labels.push('service:watcher');
+            }
+            
+            // Priority detection
+            if (title.includes('urgent') || title.includes('critical') || 
+                title.includes('blocker')) {
+              labels.push('priority:critical');
+            }
+            
+            // First-time contributor
+            const creator = issue.user.login;
+            const { data: issues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: creator,
+              state: 'all'
+            });
+            
+            if (issues.length === 1) {
+              labels.push('first-time-contributor');
+              labels.push('good first issue');
+            }
+            
+            // Add labels if any were identified
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                labels: labels
+              });
+            }
+            
+            // Auto-assign to project board based on labels
+            if (labels.includes('bug')) {
+              console.log('Bug detected - would add to bug tracking board');
+            }
+            if (labels.includes('security')) {
+              console.log('Security issue - would notify security team');
+            }
+
+  label-pr:
+    name: Auto-label Pull Requests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'pull_request_target'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Label based on files changed
+        uses: actions/labeler@v5
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          configuration-path: .github/labeler.yml
+          
+      - name: Label based on PR size
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            const labels = [];
+            
+            // Size labels based on lines changed
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const total = additions + deletions;
+            
+            if (total < 10) {
+              labels.push('size:XS');
+            } else if (total < 50) {
+              labels.push('size:S');
+            } else if (total < 200) {
+              labels.push('size:M');
+            } else if (total < 500) {
+              labels.push('size:L');
+            } else {
+              labels.push('size:XL');
+              labels.push('needs-splitting');
+            }
+            
+            // Check if PR is from a fork
+            if (pr.head.repo.fork) {
+              labels.push('from-fork');
+            }
+            
+            // Check for WIP/Draft
+            if (pr.draft || pr.title.includes('WIP') || pr.title.includes('[WIP]')) {
+              labels.push('work-in-progress');
+            }
+            
+            // First-time contributor
+            const author = pr.user.login;
+            const { data: prs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all'
+            });
+            
+            const authorPRs = prs.filter(p => p.user.login === author);
+            if (authorPRs.length === 1) {
+              labels.push('first-time-contributor');
+            }
+            
+            // Add all identified labels
+            if (labels.length > 0) {
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                labels: labels
+              });
+            }
+            
+            // Comment on large PRs
+            if (labels.includes('size:XL')) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pr.number,
+                body: `## ⚠️ Large PR Detected
+                
+This PR contains ${total} lines of changes. Consider splitting it into smaller, focused PRs for easier review.
+
+**Guidelines:**
+- Each PR should focus on a single feature or fix
+- Aim for PRs under 400 lines of change
+- Large refactors should be done incrementally
+
+*"Even immortals must take things one step at a time."*`
+              });
+            }

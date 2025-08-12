@@ -1,0 +1,264 @@
+name: 🎯 Auto Assign Reviews & Issues
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+  issues:
+    types: [opened]
+
+jobs:
+  auto-assign-pr:
+    name: Auto Assign PR Reviewers
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Auto Assign Reviewers based on CODEOWNERS
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Skip if PR is draft
+            if (pr.draft) {
+              console.log('Skipping draft PR');
+              return;
+            }
+            
+            // Get files changed in PR
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: pr.number
+            });
+            
+            // Map file paths to code owners (simplified version)
+            const reviewers = new Set();
+            const teams = new Set();
+            
+            for (const file of files) {
+              // Service-specific assignments
+              if (file.filename.includes('services/the-gathering')) {
+                teams.add('gateway-guardians');
+              }
+              if (file.filename.includes('services/the-prize')) {
+                teams.add('knowledge-keepers');
+              }
+              if (file.filename.includes('services/the-watcher')) {
+                teams.add('observatory');
+              }
+              
+              // Critical files always need mentor review
+              if (file.filename.includes('.github/') || 
+                  file.filename.includes('security/') ||
+                  file.filename.includes('.env')) {
+                teams.add('mentors');
+              }
+              
+              // Documentation changes
+              if (file.filename.endsWith('.md')) {
+                teams.add('chroniclers');
+              }
+            }
+            
+            // Always add mentors for review
+            teams.add('mentors');
+            
+            // Calculate review count based on PR size
+            const additions = pr.additions;
+            const deletions = pr.deletions;
+            const total = additions + deletions;
+            
+            let requiredReviews = 1;
+            if (total > 500) requiredReviews = 2;
+            if (total > 1000) requiredReviews = 3;
+            
+            // Request reviews
+            if (teams.size > 0) {
+              try {
+                await github.rest.pulls.requestReviewers({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  pull_number: pr.number,
+                  team_reviewers: Array.from(teams).map(t => `the-nash-group/${t}`)
+                });
+                
+                console.log(`Requested reviews from teams: ${Array.from(teams).join(', ')}`);
+              } catch (error) {
+                console.log('Error requesting reviews:', error.message);
+              }
+            }
+            
+            // Add comment about review requirements
+            const comment = `## 🎯 Review Assignment Complete
+            
+            This PR has been automatically assigned to the appropriate teams for review.
+            
+            **Required Reviews:** ${requiredReviews}
+            **PR Size:** ${total} lines changed
+            **Assigned Teams:** ${Array.from(teams).map(t => `@the-nash-group/${t}`).join(', ')}
+            
+            ### Review Guidelines:
+            - Check code quality and adherence to standards
+            - Verify tests are included and passing
+            - Ensure documentation is updated if needed
+            - Validate security implications
+            
+            *"Every blade must be inspected before battle."*`;
+            
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              body: comment
+            });
+      
+      - name: Assign PR Author as Assignee
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Assign the PR author
+            await github.rest.issues.addAssignees({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: pr.number,
+              assignees: [pr.user.login]
+            });
+
+  auto-assign-issue:
+    name: Auto Assign Issues
+    runs-on: ubuntu-latest
+    if: github.event_name == 'issues'
+    steps:
+      - name: Auto Assign Based on Labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const labels = issue.labels.map(l => l.name);
+            
+            const assignments = {
+              'bug': ['the-nash-group/mentors'],
+              'security': ['the-nash-group/watchers'],
+              'documentation': ['the-nash-group/chroniclers'],
+              'service:gathering': ['the-nash-group/gateway-guardians'],
+              'service:prize': ['the-nash-group/knowledge-keepers'],
+              'service:watcher': ['the-nash-group/observatory'],
+              'infrastructure': ['the-nash-group/mentors'],
+              'good first issue': ['the-nash-group/mentors']
+            };
+            
+            const teamsToNotify = new Set();
+            
+            for (const label of labels) {
+              if (assignments[label]) {
+                assignments[label].forEach(team => teamsToNotify.add(team));
+              }
+            }
+            
+            if (teamsToNotify.size > 0) {
+              const comment = `## 📋 Issue Triage Complete
+              
+              This issue has been triaged and the relevant teams have been notified.
+              
+              **Notified Teams:** ${Array.from(teamsToNotify).join(', ')}
+              
+              A team member will review this issue and provide feedback soon.
+              
+              *"Every quest begins with understanding the challenge."*`;
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: comment
+              });
+            }
+            
+            // Auto-assign first responder for critical issues
+            if (labels.includes('priority:critical') || labels.includes('security')) {
+              // In a real setup, this would assign to an on-call rotation
+              console.log('Critical issue detected - would notify on-call');
+            }
+
+  welcome-first-time:
+    name: Welcome First Time Contributors
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.event_name == 'issues'
+    steps:
+      - name: Check if First Time
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isIssue = !!context.payload.issue;
+            const item = context.payload.issue || context.payload.pull_request;
+            const author = item.user.login;
+            
+            // Check if this is their first contribution
+            const { data: allItems } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              creator: author,
+              state: 'all'
+            });
+            
+            if (allItems.length === 1) {
+              const welcomeMessage = isIssue ? 
+                `## 🎉 Welcome to The Nash Group, @${author}!
+                
+                Thank you for opening your first issue! We're excited to have you join our immortal ranks.
+                
+                **What happens next?**
+                - A maintainer will review your issue and provide feedback
+                - Feel free to check out our [Contributing Guide](CONTRIBUTING.md) for more information
+                - Join our [Discord](https://discord.gg/thenashgroup) to connect with the community
+                
+                **Tips for Success:**
+                - Provide as much detail as possible
+                - Include steps to reproduce (for bugs)
+                - Check if similar issues already exist
+                - Be patient - we review issues regularly
+                
+                *"Every immortal was once mortal. Welcome to your awakening."*` :
+                `## ⚔️ Welcome to The Nash Group, @${author}!
+                
+                Congratulations on your first pull request! You've taken your first step into The Game.
+                
+                **What happens next?**
+                - Automated checks will run to validate your code
+                - A mentor will review your changes
+                - You may receive feedback - this is how we all improve
+                - Once approved, your code will become eternal
+                
+                **Tips for Your First PR:**
+                - Ensure all tests pass
+                - Follow our code style guidelines
+                - Update documentation if needed
+                - Respond to review feedback promptly
+                - Don't hesitate to ask questions
+                
+                **Resources:**
+                - [Contributing Guide](CONTRIBUTING.md)
+                - [Code of Conduct](CODE_OF_CONDUCT.md)
+                - [Discord Community](https://discord.gg/thenashgroup)
+                
+                *"Your first battle shapes you. Fight with honor."*`;
+              
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: item.number,
+                body: welcomeMessage
+              });
+              
+              // Add first-time-contributor label
+              await github.rest.issues.addLabels({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: item.number,
+                labels: ['first-time-contributor']
+              });
+            }

@@ -1,0 +1,366 @@
+name: 🛡️ CI Enforcer - The Gatekeeper
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+  push:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ============================================
+  # STAGE 1: Quick Checks (Fail Fast)
+  # ============================================
+  
+  quick-checks:
+    name: ⚡ Quick Validation
+    runs-on: ubuntu-latest
+    outputs:
+      skip-ci: ${{ steps.check-skip.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Check for CI Skip
+        id: check-skip
+        run: |
+          if [[ "${{ github.event.head_commit.message }}" == *"[skip ci]"* ]]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Validate PR Title
+        if: github.event_name == 'pull_request'
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            chore
+            revert
+          requireScope: false
+          subjectPattern: ^[A-Z].*[^.]$
+          subjectPatternError: |
+            The subject "{subject}" found in the pull request title "{title}" 
+            didn't match the configured pattern. Please ensure that the subject 
+            starts with an uppercase letter and doesn't end with a period.
+      
+      - name: Check Commit Messages
+        run: |
+          # Install commitlint
+          npm install -g @commitlint/cli @commitlint/config-conventional
+          
+          # Check commits
+          if [ "${{ github.event_name }}" == "pull_request" ]; then
+            npx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }} --verbose
+          fi
+      
+      - name: File Size Check
+        run: |
+          # Fail if any single file is over 10MB
+          large_files=$(find . -type f -size +10M | grep -v "^./.git")
+          if [ ! -z "$large_files" ]; then
+            echo "❌ Large files detected (>10MB):"
+            echo "$large_files"
+            echo ""
+            echo "Please use Git LFS for large files or reduce file size."
+            exit 1
+          fi
+      
+      - name: Forbidden Files Check
+        run: |
+          # Check for files that should never be committed
+          forbidden_patterns=(
+            ".env"
+            ".env.local"
+            ".env.production"
+            "*.pem"
+            "*.key"
+            "*.p12"
+            ".DS_Store"
+            "Thumbs.db"
+            "npm-debug.log"
+            "yarn-error.log"
+          )
+          
+          for pattern in "${forbidden_patterns[@]}"; do
+            if find . -name "$pattern" | grep -v "^./.git" | grep -q .; then
+              echo "❌ Forbidden file pattern detected: $pattern"
+              echo "These files should never be committed to the repository."
+              exit 1
+            fi
+          done
+
+  # ============================================
+  # STAGE 2: Code Quality
+  # ============================================
+  
+  code-quality:
+    name: 📝 Code Quality Checks
+    needs: quick-checks
+    if: needs.quick-checks.outputs.skip-ci != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        check: [lint, format, complexity]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Run Linter
+        if: matrix.check == 'lint'
+        run: |
+          npm run lint:check || {
+            echo "❌ Linting failed! Run 'npm run lint:fix' locally to fix issues."
+            exit 1
+          }
+      
+      - name: Check Formatting
+        if: matrix.check == 'format'
+        run: |
+          npm run format:check || {
+            echo "❌ Formatting check failed! Run 'npm run format' locally to fix."
+            exit 1
+          }
+      
+      - name: Check Complexity
+        if: matrix.check == 'complexity'
+        run: |
+          # Check cyclomatic complexity
+          npx eslint . --rule 'complexity: ["error", 10]' || {
+            echo "⚠️ High complexity detected. Consider refactoring complex functions."
+          }
+
+  # ============================================
+  # STAGE 3: Security Scanning
+  # ============================================
+  
+  security:
+    name: 🔒 Security Scanning
+    needs: quick-checks
+    if: needs.quick-checks.outputs.skip-ci != 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Trivy Security Scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
+      
+      - name: Upload Trivy Results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+      
+      - name: Check for Secrets
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+      
+      - name: Dependency Audit
+        run: |
+          npm audit --audit-level=moderate || {
+            echo "⚠️ Vulnerable dependencies detected. Run 'npm audit fix' to resolve."
+            # Don't fail the build for now, just warn
+          }
+
+  # ============================================
+  # STAGE 4: Tests
+  # ============================================
+  
+  test:
+    name: 🧪 Test Suite
+    needs: [quick-checks, code-quality]
+    if: needs.quick-checks.outputs.skip-ci != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-type: [unit, integration, e2e]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Run ${{ matrix.test-type }} Tests
+        run: |
+          npm run test:${{ matrix.test-type }} -- --coverage || {
+            echo "❌ ${{ matrix.test-type }} tests failed!"
+            exit 1
+          }
+      
+      - name: Upload Coverage
+        if: matrix.test-type == 'unit'
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage/lcov.info
+          flags: unittests
+          name: codecov-umbrella
+      
+      - name: Check Coverage Thresholds
+        if: matrix.test-type == 'unit'
+        run: |
+          # Enforce minimum coverage
+          coverage=$(cat coverage/coverage-summary.json | jq '.total.lines.pct')
+          if (( $(echo "$coverage < 80" | bc -l) )); then
+            echo "❌ Code coverage ($coverage%) is below threshold (80%)"
+            exit 1
+          fi
+
+  # ============================================
+  # STAGE 5: Build Verification
+  # ============================================
+  
+  build:
+    name: 🔨 Build Verification
+    needs: [quick-checks, code-quality]
+    if: needs.quick-checks.outputs.skip-ci != 'true'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        target: [development, production]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install Dependencies
+        run: npm ci
+      
+      - name: Build for ${{ matrix.target }}
+        run: |
+          npm run build:${{ matrix.target }} || {
+            echo "❌ Build failed for ${{ matrix.target }}!"
+            exit 1
+          }
+      
+      - name: Check Bundle Size
+        if: matrix.target == 'production'
+        run: |
+          # Check that bundle size hasn't increased dramatically
+          MAX_SIZE_KB=5000
+          size=$(du -sk dist | cut -f1)
+          if [ $size -gt $MAX_SIZE_KB ]; then
+            echo "⚠️ Bundle size ($size KB) exceeds limit ($MAX_SIZE_KB KB)"
+            # Don't fail, just warn for now
+          fi
+      
+      - name: Upload Build Artifacts
+        if: matrix.target == 'production'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.target }}
+          path: dist/
+          retention-days: 7
+
+  # ============================================
+  # STAGE 6: Final Validation
+  # ============================================
+  
+  final-check:
+    name: ✅ Final Validation
+    needs: [test, security, build]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check All Jobs
+        run: |
+          if [[ "${{ needs.test.result }}" != "success" || 
+                "${{ needs.security.result }}" != "success" || 
+                "${{ needs.build.result }}" != "success" ]]; then
+            echo "❌ One or more required checks failed!"
+            echo "Test: ${{ needs.test.result }}"
+            echo "Security: ${{ needs.security.result }}"
+            echo "Build: ${{ needs.build.result }}"
+            exit 1
+          fi
+          echo "✅ All checks passed! Ready to merge."
+      
+      - name: Post Success Comment
+        if: github.event_name == 'pull_request' && success()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('CI Status Report')
+            );
+            
+            const body = `## ✅ CI Status Report
+            
+            All checks have passed successfully!
+            
+            | Check | Status |
+            |-------|--------|
+            | 📝 Code Quality | ✅ Passed |
+            | 🔒 Security | ✅ Passed |
+            | 🧪 Tests | ✅ Passed |
+            | 🔨 Build | ✅ Passed |
+            
+            This PR is ready for review by the Mentors.
+            
+            *"The code has proven worthy in combat."*`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: body
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: body
+              });
+            }

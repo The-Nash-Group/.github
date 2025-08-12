@@ -1,0 +1,97 @@
+name: 📜 Update The Chronicles (Documentation)
+description: Report issues or improvements needed in documentation
+title: "[DOCS] "
+labels: ["documentation", "good first issue"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## The Chronicles Must Be Preserved
+        
+        Documentation is the immortal memory of our systems. Help us keep The Chronicles accurate and comprehensive.
+        
+        *"Those who do not document history are doomed to debug it."*
+
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Documentation Type
+      description: What kind of documentation needs attention?
+      options:
+        - API Documentation
+        - Architecture Documentation
+        - Setup/Installation Guide
+        - Configuration Reference
+        - Troubleshooting Guide
+        - Code Examples
+        - Conceptual/Theory
+        - ADR (Architectural Decision Record)
+        - Runbook
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Issue Type
+      description: What's wrong with the current documentation?
+      options:
+        - Missing documentation
+        - Incorrect information
+        - Outdated information
+        - Unclear explanation
+        - Broken links
+        - Missing examples
+        - Typo/Grammar
+        - Needs improvement
+    validations:
+      required: true
+
+  - type: input
+    id: location
+    attributes:
+      label: Location
+      description: Where in The Chronicles is this issue? (URL or file path)
+      placeholder: https://github.com/the-nash-group/docs-chronicles/...
+
+  - type: textarea
+    id: current
+    attributes:
+      label: Current State
+      description: What does the documentation currently say? (if applicable)
+      placeholder: The current documentation states...
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Suggested Improvement
+      description: How should the documentation be corrected or improved?
+      placeholder: The documentation should explain...
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: |
+        Why is this documentation important? 
+        Who would benefit from this improvement?
+      placeholder: |
+        This documentation is important because...
+        It would help developers who...
+
+  - type: checkboxes
+    id: volunteer
+    attributes:
+      label: The Scribe's Oath
+      description: Your commitment to improving The Chronicles
+      options:
+        - label: I have verified this documentation issue exists in the latest version
+          required: true
+        - label: I am willing to submit a PR to fix this documentation
+          required: false
+        - label: I can provide code examples if needed
+          required: false

@@ -1,0 +1,16 @@
+{
+  "name": "The Nash Group Release Workflow",
+  "description": "Automated release workflow for The Nash Group services - builds, containers, and GitHub releases",
+  "iconName": "octicon rocket",
+  "categories": [
+    "deployment",
+    "Dockerfile",
+    "continuous-delivery"
+  ],
+  "filePatterns": [
+    "Dockerfile$",
+    "package.json$",
+    "Cargo.toml$",
+    "go.mod$"
+  ]
+}

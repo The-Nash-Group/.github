@@ -1,0 +1,143 @@
+# The Nash Group - Code Ownership Registry
+# ==========================================
+#
+# This document declares the Immortals responsible for different realms
+# of The Nash Group's codebase. Like territories claimed through centuries
+# of conquest, each path has its guardian.
+#
+# The Mentors review all changes, but specific domains require blessing
+# from their appointed guardians.
+#
+# Format: <pattern> <GitHub team or username>
+# Later matches take precedence
+
+# ====================
+# The High Council
+# ====================
+# These Immortals oversee all realms
+* @the-nash-group/mentors
+
+# ====================
+# The Sacred Texts
+# ====================
+# Documentation and chronicles require special attention
+/docs/ @the-nash-group/mentors @the-nash-group/chroniclers
+*.md @the-nash-group/chroniclers
+/README.md @the-nash-group/mentors
+
+# ====================
+# The Organization Temple
+# ====================
+# The .github directory is sacred ground
+/.github/ @the-nash-group/watchers
+/.github/CODEOWNERS @the-nash-group/watchers
+/.github/workflows/ @the-nash-group/mentors @the-nash-group/watchers
+
+# ====================
+# Service Territories
+# ====================
+
+# The Gathering - Gateway Service
+/services/the-gathering/ @the-nash-group/gateway-guardians @the-nash-group/mentors
+
+# The Prize - MCP Documentation Service
+/services/the-prize/ @the-nash-group/knowledge-keepers @the-nash-group/mentors
+
+# The Watcher - Service Catalog
+/services/the-watcher/ @the-nash-group/observatory @the-nash-group/mentors
+
+# Holy Ground - Secrets Management
+/services/holy-ground/ @the-nash-group/watchers
+/services/holy-ground/secrets/ @the-nash-group/watchers
+*.pem @the-nash-group/watchers
+*.key @the-nash-group/watchers
+.env* @the-nash-group/watchers
+
+# Methos - Budget Management
+/services/methos/ @the-nash-group/treasury @the-nash-group/mentors
+
+# The Antique Shop - Ledger Service
+/services/antique-shop/ @the-nash-group/treasury @the-nash-group/mentors
+
+# ====================
+# Infrastructure Realms
+# ====================
+
+# The Quickening - Observability Stack
+/infrastructure/quickening/ @the-nash-group/observatory @the-nash-group/mentors
+/grafana/ @the-nash-group/observatory
+/prometheus/ @the-nash-group/observatory
+*.dashboard.json @the-nash-group/observatory
+
+# Container Configurations
+/docker/ @the-nash-group/mentors
+Dockerfile* @the-nash-group/mentors
+docker-compose* @the-nash-group/mentors
+
+# Kubernetes Manifests
+/k8s/ @the-nash-group/mentors @the-nash-group/watchers
+*.yaml @the-nash-group/mentors
+*.yml @the-nash-group/mentors
+
+# ====================
+# The Arsenal
+# ====================
+
+# The Sword - CLI Tool
+/tools/the-sword/ @the-nash-group/toolsmiths @the-nash-group/mentors
+
+# The Katana - Developer Configurations
+/tools/the-katana/ @the-nash-group/toolsmiths
+/dotfiles/ @the-nash-group/toolsmiths
+
+# ====================
+# The Forge
+# ====================
+
+# Build and CI/CD
+/.github/workflows/ @the-nash-group/mentors @the-nash-group/watchers
+/scripts/build/ @the-nash-group/mentors
+/scripts/deploy/ @the-nash-group/watchers
+Makefile @the-nash-group/mentors
+
+# ====================
+# The Archives
+# ====================
+
+# Test Files - Every warrior must prove their worth
+**/*test* @the-nash-group/mentors
+**/*spec* @the-nash-group/mentors
+/tests/ @the-nash-group/mentors
+
+# Security Configurations
+/security/ @the-nash-group/watchers
+*.security @the-nash-group/watchers
+SECURITY.md @the-nash-group/watchers
+
+# ====================
+# Special Provisions
+# ====================
+
+# Package manifests require extra scrutiny
+package.json @the-nash-group/mentors
+package-lock.json @the-nash-group/mentors
+go.mod @the-nash-group/mentors
+go.sum @the-nash-group/mentors
+Cargo.toml @the-nash-group/mentors
+Cargo.lock @the-nash-group/mentors
+requirements.txt @the-nash-group/mentors
+pyproject.toml @the-nash-group/mentors
+
+# License - The ancient pact
+LICENSE @the-nash-group/watchers
+
+# ====================
+# The Law
+# ====================
+# 
+# 1. All paths not explicitly claimed fall under @the-nash-group/mentors
+# 2. Changes to this file require approval from @the-nash-group/watchers
+# 3. Emergency fixes may bypass ownership with 2+ Mentor approvals
+# 4. The Watchers have ultimate veto power on all changes
+#
+# "There can be only one... owner per path."

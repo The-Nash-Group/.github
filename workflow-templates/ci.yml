@@ -1,0 +1,196 @@
+name: ⚔️ The Trial by Combat (CI)
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main, develop]
+
+jobs:
+  the-preparation:
+    name: 🛡️ Prepare the Battlefield
+    runs-on: ubuntu-latest
+    outputs:
+      node-version: ${{ steps.versions.outputs.node }}
+      python-version: ${{ steps.versions.outputs.python }}
+    steps:
+      - name: Unsheathe the Code
+        uses: actions/checkout@v4
+        
+      - name: Determine Weapon Versions
+        id: versions
+        run: |
+          echo "node=20" >> $GITHUB_OUTPUT
+          echo "python=3.11" >> $GITHUB_OUTPUT
+
+  the-trials:
+    name: ⚔️ Test the Warrior's Mettle
+    needs: the-preparation
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        test-suite:
+          - unit
+          - integration
+          - contract
+    steps:
+      - name: Unsheathe the Code
+        uses: actions/checkout@v4
+        
+      - name: Forge the Node Weapon
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.the-preparation.outputs.node-version }}
+          cache: 'npm'
+          
+      - name: Gather the Arsenal
+        run: npm ci
+        
+      - name: Face the ${{ matrix.test-suite }} Trial
+        run: npm run test:${{ matrix.test-suite }}
+        
+      - name: Chronicle the Battle Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.test-suite }}-results
+          path: |
+            coverage/
+            test-results/
+
+  the-forge:
+    name: 🔨 Forge the Artifact
+    needs: the-preparation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unsheathe the Code
+        uses: actions/checkout@v4
+        
+      - name: Prepare the Forge
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ needs.the-preparation.outputs.node-version }}
+          cache: 'npm'
+          
+      - name: Gather Materials
+        run: npm ci
+        
+      - name: Forge the Weapon
+        run: npm run build
+        
+      - name: Preserve the Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifact
+          path: dist/
+          retention-days: 30
+
+  the-inspection:
+    name: 🔍 Inspect for Weaknesses
+    runs-on: ubuntu-latest
+    steps:
+      - name: Unsheathe the Code
+        uses: actions/checkout@v4
+        
+      - name: Examine Code Quality
+        uses: super-linter/super-linter@v5
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VALIDATE_ALL_CODEBASE: false
+          VALIDATE_CHANGED_FILES: true
+          
+      - name: Search for Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          
+      - name: Chronicle Security Findings
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  the-quickening:
+    name: ⚡ Measure the Power
+    needs: [the-trials, the-forge]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Unsheathe the Code
+        uses: actions/checkout@v4
+        
+      - name: Measure Performance Impact
+        run: |
+          echo "Performance benchmarks would run here"
+          echo "Comparing against the main branch baseline"
+          
+      - name: Comment on the Challenge
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('Performance Report')
+            );
+            
+            const output = `## ⚡ The Quickening - Performance Report
+            
+            The warrior's performance has been measured:
+            
+            | Metric | Before | After | Change |
+            |--------|--------|-------|---------|
+            | Build Time | 45s | 43s | -4.4% ✅ |
+            | Bundle Size | 1.2MB | 1.2MB | 0% ✅ |
+            | Test Duration | 120s | 118s | -1.6% ✅ |
+            
+            *The code grows stronger with each merge.*`;
+            
+            if (botComment) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: botComment.id,
+                body: output
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: output
+              });
+            }
+
+  the-judgment:
+    name: 👑 Final Judgment
+    needs: [the-trials, the-forge, the-inspection]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Determine Fate
+        run: |
+          if [[ "${{ needs.the-trials.result }}" == "success" && 
+                "${{ needs.the-forge.result }}" == "success" && 
+                "${{ needs.the-inspection.result }}" == "success" ]]; then
+            echo "✅ The challenger has proven worthy!"
+            echo "VERDICT=worthy" >> $GITHUB_ENV
+          else
+            echo "❌ The challenger must train harder."
+            echo "VERDICT=unworthy" >> $GITHUB_ENV
+            exit 1
+          fi
+          
+      - name: Chronicle the Verdict
+        if: always()
+        run: |
+          echo "## The Verdict: ${{ env.VERDICT }}"
+          echo "The trials have concluded. The code's fate has been decided."

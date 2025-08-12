@@ -1,0 +1,106 @@
+name: 🔍 Dependency Review
+
+on:
+  pull_request:
+    paths:
+      - 'package*.json'
+      - 'go.mod'
+      - 'go.sum'
+      - 'requirements.txt'
+      - 'Pipfile*'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'pom.xml'
+      - 'build.gradle'
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  dependency-review:
+    name: Review Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Dependency Review
+        uses: actions/dependency-review-action@v3
+        with:
+          fail-on-severity: high
+          deny-licenses: GPL-3.0, AGPL-3.0
+          
+      - name: Check for Major Version Updates
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const { data: files } = await github.rest.pulls.listFiles({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.issue.number
+            });
+            
+            const packageFiles = files.filter(f => 
+              f.filename === 'package.json' || 
+              f.filename === 'package-lock.json'
+            );
+            
+            if (packageFiles.length > 0) {
+              let hasMajorUpdate = false;
+              let updates = [];
+              
+              for (const file of packageFiles) {
+                if (file.patch && file.filename === 'package.json') {
+                  const lines = file.patch.split('\n');
+                  for (const line of lines) {
+                    if (line.startsWith('+') && line.includes('"')) {
+                      const match = line.match(/"([^"]+)":\s*"([^"]+)"/);
+                      if (match) {
+                        const [, pkg, version] = match;
+                        if (line.includes('^') || line.includes('~')) {
+                          const majorVersion = version.match(/\d+/);
+                          if (majorVersion) {
+                            updates.push(`${pkg}: ${version}`);
+                            // Check if it's a major version bump
+                            const oldLine = lines.find(l => 
+                              l.startsWith('-') && l.includes(`"${pkg}"`)
+                            );
+                            if (oldLine) {
+                              const oldVersion = oldLine.match(/\d+/);
+                              if (oldVersion && oldVersion[0] !== majorVersion[0]) {
+                                hasMajorUpdate = true;
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+              
+              if (hasMajorUpdate || updates.length > 0) {
+                const comment = `## 📦 Dependency Update Review
+                
+                ${hasMajorUpdate ? '### ⚠️ Major Version Update Detected\n\nThis PR includes major version updates that may contain breaking changes. Please ensure:\n- Migration guides have been reviewed\n- Breaking changes are documented\n- All affected code has been updated\n' : ''}
+                
+                ### Dependencies Modified:
+                ${updates.map(u => `- ${u}`).join('\n')}
+                
+                ### Review Checklist:
+                - [ ] Security advisories checked
+                - [ ] License compatibility verified
+                - [ ] Breaking changes documented
+                - [ ] Tests pass with new dependencies
+                - [ ] Performance impact assessed
+                
+                *"With great power comes great dependency management."*`;
+                
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: context.issue.number,
+                  body: comment
+                });
+              }
+            }

@@ -1,0 +1,254 @@
+# GitHub repository settings
+# This file is managed by the Settings GitHub App
+# https://github.com/apps/settings
+
+repository:
+  name: ${REPO_NAME}
+  description: "Part of The Nash Group - Building timeless software solutions"
+  homepage: https://thenashgroup.dev
+  topics:
+    - the-nash-group
+    - microservices
+    - cloud-native
+    - immortal-code
+  private: false
+  has_issues: true
+  has_projects: true
+  has_wiki: true
+  has_downloads: true
+  default_branch: main
+  allow_squash_merge: true
+  allow_merge_commit: false
+  allow_rebase_merge: true
+  allow_auto_merge: true
+  delete_branch_on_merge: true
+  allow_update_branch: true
+  use_squash_pr_title_as_default: true
+  squash_merge_commit_title: PR_TITLE
+  squash_merge_commit_message: PR_BODY
+  merge_commit_title: PR_TITLE
+  merge_commit_message: PR_BODY
+  enable_automated_security_fixes: true
+  enable_vulnerability_alerts: true
+
+labels:
+  # Priority
+  - name: "priority:critical"
+    color: "FF0000"
+    description: "Mortal wound - requires immediate attention"
+  - name: "priority:high"
+    color: "FF6B6B"
+    description: "Deep cut - should be addressed soon"
+  - name: "priority:medium"
+    color: "FFB366"
+    description: "Battle scar - normal priority"
+  - name: "priority:low"
+    color: "36C5F0"
+    description: "Flesh wound - can wait"
+    
+  # Type
+  - name: "bug"
+    color: "d73a4a"
+    description: "Something isn't working"
+  - name: "enhancement"
+    color: "a2eeef"
+    description: "New feature or request"
+  - name: "documentation"
+    color: "0075ca"
+    description: "Improvements or additions to documentation"
+  - name: "security"
+    color: "FF0000"
+    description: "Security vulnerability or concern"
+  - name: "performance"
+    color: "FFD93D"
+    description: "Performance improvement"
+    
+  # Status
+  - name: "needs-triage"
+    color: "FBCA04"
+    description: "Needs to be triaged by maintainers"
+  - name: "in-progress"
+    color: "0E8A16"
+    description: "Currently being worked on"
+  - name: "blocked"
+    color: "B60205"
+    description: "Blocked by external factors"
+  - name: "ready-for-review"
+    color: "0E8A16"
+    description: "Ready for code review"
+  - name: "work-in-progress"
+    color: "FEF2C0"
+    description: "Still being developed"
+    
+  # Size
+  - name: "size:XS"
+    color: "00FF00"
+    description: "Extra small PR (<10 lines)"
+  - name: "size:S"
+    color: "7FFF00"
+    description: "Small PR (10-50 lines)"
+  - name: "size:M"
+    color: "FFFF00"
+    description: "Medium PR (50-200 lines)"
+  - name: "size:L"
+    color: "FFA500"
+    description: "Large PR (200-500 lines)"
+  - name: "size:XL"
+    color: "FF0000"
+    description: "Extra large PR (>500 lines)"
+  - name: "needs-splitting"
+    color: "FF0000"
+    description: "PR is too large and should be split"
+    
+  # Special
+  - name: "good first issue"
+    color: "7057ff"
+    description: "Good for newcomers"
+  - name: "help wanted"
+    color: "008672"
+    description: "Extra attention is needed"
+  - name: "first-time-contributor"
+    color: "9149FF"
+    description: "PR from a first-time contributor"
+  - name: "stale"
+    color: "CFD3D7"
+    description: "No activity for extended period"
+  - name: "automated"
+    color: "0052CC"
+    description: "Automated by bots or actions"
+  - name: "dependencies"
+    color: "0366d6"
+    description: "Pull requests that update a dependency file"
+    
+  # Services
+  - name: "service:gathering"
+    color: "5319E7"
+    description: "The Gathering (Gateway) service"
+  - name: "service:prize"
+    color: "5319E7"
+    description: "The Prize (MCP-Docs) service"
+  - name: "service:watcher"
+    color: "5319E7"
+    description: "The Watcher (Catalog) service"
+  - name: "service:holy-ground"
+    color: "5319E7"
+    description: "Holy Ground (Secrets) service"
+    
+  # Components
+  - name: "frontend"
+    color: "E99695"
+    description: "Frontend related"
+  - name: "backend"
+    color: "BFD4F2"
+    description: "Backend related"
+  - name: "database"
+    color: "F9D0C4"
+    description: "Database related"
+  - name: "infrastructure"
+    color: "C5DEF5"
+    description: "Infrastructure related"
+  - name: "ci/cd"
+    color: "BFD4F2"
+    description: "CI/CD pipeline related"
+  - name: "tests"
+    color: "FEF2C0"
+    description: "Test related"
+
+teams:
+  - name: immortals
+    description: "Core developers - Players of The Game"
+    privacy: closed
+    permission: push
+    
+  - name: mentors
+    description: "Senior developers - Teachers of The Rules"
+    privacy: closed
+    permission: maintain
+    
+  - name: watchers
+    description: "Administrators - Keepers of The Organization"
+    privacy: closed
+    permission: admin
+    
+  - name: allies
+    description: "Bots and external collaborators"
+    privacy: closed
+    permission: read
+    
+  - name: gateway-guardians
+    description: "Maintainers of The Gathering service"
+    privacy: closed
+    permission: push
+    
+  - name: knowledge-keepers
+    description: "Maintainers of The Prize service"
+    privacy: closed
+    permission: push
+    
+  - name: observatory
+    description: "Maintainers of The Watcher service"
+    privacy: closed
+    permission: push
+    
+  - name: chroniclers
+    description: "Documentation maintainers"
+    privacy: closed
+    permission: push
+    
+  - name: treasury
+    description: "Financial service maintainers"
+    privacy: closed
+    permission: push
+    
+  - name: toolsmiths
+    description: "Tool and CLI maintainers"
+    privacy: closed
+    permission: push
+
+milestones:
+  - title: "The Awakening"
+    description: "Initial MVP release"
+    state: open
+    
+  - title: "The Gathering"
+    description: "Gateway service implementation"
+    state: open
+    
+  - title: "The Quickening"
+    description: "Performance and observability improvements"
+    state: open
+    
+  - title: "Holy Ground"
+    description: "Security hardening phase"
+    state: open
+
+collaborators:
+  # Add specific users here if needed
+  # - username: octocat
+  #   permission: push
+
+branches:
+  - name: main
+    protection:
+      required_status_checks:
+        strict: true
+        contexts:
+          - "CI Enforcer - The Gatekeeper / Final Validation"
+      enforce_admins: false
+      required_pull_request_reviews:
+        required_approving_review_count: 2
+        dismiss_stale_reviews: true
+        require_code_owner_reviews: true
+        require_last_push_approval: true
+        dismissal_restrictions:
+          teams:
+            - the-nash-group/watchers
+      restrictions:
+        teams:
+          - the-nash-group/watchers
+          - the-nash-group/mentors
+      allow_force_pushes: false
+      allow_deletions: false
+      required_conversation_resolution: true
+      lock_branch: false
+      allow_fork_syncing: false

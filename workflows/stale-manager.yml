@@ -1,0 +1,166 @@
+name: 🧹 Stale Issue & PR Manager
+
+on:
+  schedule:
+    # Run every day at 1 AM UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    name: Mark and Close Stale Items
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          
+          # Issue configuration
+          days-before-issue-stale: 30
+          days-before-issue-close: 7
+          stale-issue-label: 'stale'
+          close-issue-label: 'closed:stale'
+          exempt-issue-labels: 'pinned,security,priority:critical,priority:high'
+          
+          stale-issue-message: |
+            ## ⏰ This Issue Has Been Marked as Stale
+            
+            This issue has been automatically marked as stale because it has not had recent activity for 30 days.
+            
+            **What happens next?**
+            - If no further activity occurs, this issue will be automatically closed in 7 days
+            - To keep this issue open, simply add a comment or remove the `stale` label
+            - If this issue is still relevant, please provide an update on its status
+            
+            *"Even immortals must occasionally clean house."*
+          
+          close-issue-message: |
+            ## 🔒 Issue Closed Due to Inactivity
+            
+            This issue has been automatically closed because it has been stale for 7 days with no activity.
+            
+            If you believe this issue should remain open:
+            1. Reply with a comment explaining why
+            2. A maintainer will review and potentially reopen it
+            
+            Thank you for your contributions to The Nash Group!
+            
+            *"Some battles are not meant to be fought."*
+          
+          # PR configuration
+          days-before-pr-stale: 14
+          days-before-pr-close: 7
+          stale-pr-label: 'stale'
+          close-pr-label: 'closed:stale'
+          exempt-pr-labels: 'pinned,work-in-progress,ready-for-review'
+          
+          stale-pr-message: |
+            ## ⏰ This Pull Request Has Been Marked as Stale
+            
+            This PR has been automatically marked as stale because it has not had recent activity for 14 days.
+            
+            **What happens next?**
+            - If no further activity occurs, this PR will be automatically closed in 7 days
+            - To keep this PR open, please:
+              - Push new commits
+              - Add comments with status updates
+              - Remove the `stale` label
+            - Consider marking as `work-in-progress` if you need more time
+            
+            **Need help?**
+            - Request a review from maintainers
+            - Ask questions in our Discord
+            - Break this into smaller PRs if it's too large
+            
+            *"A blade left unsharpened grows dull."*
+          
+          close-pr-message: |
+            ## 🔒 Pull Request Closed Due to Inactivity
+            
+            This PR has been automatically closed because it has been stale for 7 days with no activity.
+            
+            If you'd like to continue working on this:
+            1. You can reopen this PR if you have push access
+            2. Otherwise, feel free to submit a new PR with your changes
+            3. Reference this PR number in your new submission
+            
+            Thank you for your efforts to improve The Nash Group!
+            
+            *"Not every sword strike lands, but every attempt teaches."*
+          
+          # Exemptions for certain types
+          exempt-all-assignees: false
+          exempt-all-milestones: false
+          exempt-draft-pr: true
+          
+          # Operation limits
+          operations-per-run: 30
+          
+          # Additional options
+          remove-stale-when-updated: true
+          delete-branch: false
+          
+          # Sort by least recently updated first
+          ascending: true
+          
+          # Debugging
+          debug-only: false
+
+  abandoned-draft-cleanup:
+    name: Clean Up Abandoned Drafts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const daysBeforeStale = 30;
+            const staleBefore = new Date();
+            staleBefore.setDate(staleBefore.getDate() - daysBeforeStale);
+            
+            // Get all draft PRs
+            const { data: pulls } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              per_page: 100
+            });
+            
+            const draftPulls = pulls.filter(pr => pr.draft);
+            
+            for (const pr of draftPulls) {
+              const lastUpdated = new Date(pr.updated_at);
+              
+              if (lastUpdated < staleBefore) {
+                // Add a warning comment
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  body: `## ⚠️ Abandoned Draft PR Warning
+                  
+This draft PR hasn't been updated in ${daysBeforeStale} days.
+
+**Recommendations:**
+- If you're still working on this, please push an update
+- If you're stuck, ask for help in the comments
+- If this is no longer needed, please close the PR
+- Consider converting to "Ready for Review" if the work is complete
+
+Draft PRs that remain inactive for 60 days will be automatically closed.
+
+*"Even immortals must finish what they start."*`
+                });
+                
+                // Add abandoned-draft label
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: pr.number,
+                  labels: ['abandoned-draft']
+                });
+              }
+            }

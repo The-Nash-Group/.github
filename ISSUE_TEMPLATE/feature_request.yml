@@ -1,0 +1,133 @@
+name: ⚔️ Forge a New Weapon (Feature Request)
+description: Propose a new capability for The Nash Group ecosystem
+title: "[FEATURE] "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## A New Chapter in The Chronicles
+        
+        Every great system evolves through the ages. Your feature request could become the next legendary addition to our arsenal.
+        
+        *"The best weapon is the one you haven't forged yet."*
+
+  - type: dropdown
+    id: service
+    attributes:
+      label: Target Service
+      description: Which component would benefit from this enhancement?
+      options:
+        - The Gathering (Gateway)
+        - The Prize (MCP-Docs)
+        - The Watcher (Service Catalog)
+        - Holy Ground (Secrets Management)
+        - Methos (Budgeteer)
+        - The Quickening (Observability)
+        - The Sword (CLI)
+        - The Katana (Dotfiles)
+        - The Antique Shop (Ledger)
+        - New Service/Component
+        - Cross-Service Feature
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The Challenge
+      description: What problem does this feature solve? What battle does it help us win?
+      placeholder: |
+        Currently, when trying to [use case], I encounter [limitation/problem].
+        This makes it difficult to [achieve goal].
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: The Proposed Solution
+      description: Describe your vision for this feature
+      placeholder: |
+        I envision a feature that would...
+        It would work by...
+        Users would interact with it through...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Approaches
+      description: What other solutions have you considered?
+      placeholder: |
+        I've also considered:
+        1. [Alternative 1] - but it has [drawback]
+        2. [Alternative 2] - but it lacks [requirement]
+
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples & Use Cases
+      description: Provide concrete examples of how this feature would be used
+      placeholder: |
+        Example 1: A developer needs to...
+        Example 2: During deployment, the system would...
+      value: |
+        Example 1: 
+        Example 2: 
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Strategic Value
+      description: How important is this feature to The Nash Group's mission?
+      options:
+        - 🗡️ Nice to Have (Quality of life improvement)
+        - ⚔️ Valuable (Enhances existing capabilities)
+        - 🛡️ Strategic (Unlocks new possibilities)
+        - 👑 The Prize (Game-changing capability)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: breaking
+    attributes:
+      label: Breaking Changes
+      description: Would this feature require breaking changes?
+      options:
+        - No breaking changes
+        - Minor breaking changes (with migration path)
+        - Major breaking changes
+        - Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation Thoughts
+      description: |
+        If you have ideas about how this could be implemented, share them here.
+        This could include technical approaches, dependencies, or architectural considerations.
+      placeholder: |
+        This could potentially be implemented using...
+        We might need to consider...
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: The Immortal's Pledge
+      description: Your commitment to this feature
+      options:
+        - label: I have searched existing issues and discussions for similar requests
+          required: true
+        - label: I have consulted The Chronicles to understand current capabilities
+          required: true
+        - label: I am willing to contribute to the implementation of this feature
+          required: false
+        - label: I am willing to write tests for this feature
+          required: false
+        - label: I am willing to document this feature in The Chronicles
+          required: false

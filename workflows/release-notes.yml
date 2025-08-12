@@ -1,0 +1,256 @@
+name: 📜 Automated Release Notes
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to generate release notes for'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: read
+
+jobs:
+  generate-notes:
+    name: Generate Release Notes
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Get Tag Info
+        id: tag
+        run: |
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${{ github.ref_name }}"
+          fi
+          echo "tag=$TAG" >> $GITHUB_OUTPUT
+          
+          # Get previous tag
+          PREV_TAG=$(git describe --tags --abbrev=0 $TAG^ 2>/dev/null || echo "")
+          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+      
+      - name: Generate Changelog
+        id: changelog
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = '${{ steps.tag.outputs.tag }}';
+            const prevTag = '${{ steps.tag.outputs.prev_tag }}';
+            
+            // Get all PRs merged since last tag
+            const { data: commits } = await github.rest.repos.compareCommits({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              base: prevTag || 'HEAD~50',
+              head: tag
+            });
+            
+            // Categorize changes
+            const categories = {
+              '🚀 Features': [],
+              '🐛 Bug Fixes': [],
+              '📚 Documentation': [],
+              '🔧 Maintenance': [],
+              '⚡ Performance': [],
+              '🔒 Security': [],
+              '⚠️ Breaking Changes': []
+            };
+            
+            const contributors = new Set();
+            const prNumbers = new Set();
+            
+            for (const commit of commits.commits) {
+              const message = commit.commit.message;
+              const author = commit.author?.login || commit.commit.author.name;
+              contributors.add(author);
+              
+              // Extract PR number
+              const prMatch = message.match(/#(\d+)/);
+              if (prMatch) {
+                prNumbers.add(prMatch[1]);
+              }
+              
+              // Categorize by conventional commit type
+              const typeMatch = message.match(/^(\w+)(?:\([^)]+\))?: (.+)/);
+              if (typeMatch) {
+                const [, type, description] = typeMatch;
+                const shortSha = commit.sha.substring(0, 7);
+                const entry = `- ${description} ([${shortSha}](${commit.html_url}))`;
+                
+                switch(type) {
+                  case 'feat':
+                    categories['🚀 Features'].push(entry);
+                    break;
+                  case 'fix':
+                    categories['🐛 Bug Fixes'].push(entry);
+                    break;
+                  case 'docs':
+                    categories['📚 Documentation'].push(entry);
+                    break;
+                  case 'perf':
+                    categories['⚡ Performance'].push(entry);
+                    break;
+                  case 'security':
+                    categories['🔒 Security'].push(entry);
+                    break;
+                  case 'build':
+                  case 'ci':
+                  case 'chore':
+                  case 'refactor':
+                  case 'style':
+                  case 'test':
+                    categories['🔧 Maintenance'].push(entry);
+                    break;
+                }
+                
+                // Check for breaking changes
+                if (message.includes('BREAKING CHANGE') || message.includes('BREAKING-CHANGE')) {
+                  categories['⚠️ Breaking Changes'].push(entry);
+                }
+              }
+            }
+            
+            // Build changelog
+            let changelog = `# Release ${tag}\n\n`;
+            changelog += `*Released on ${new Date().toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}*\n\n`;
+            
+            // Add quote
+            const quotes = [
+              "*\"There can be only one... release at a time.\"*",
+              "*\"Every release makes us stronger.\"*",
+              "*\"The code evolves, but its spirit is eternal.\"*",
+              "*\"Another chapter in The Chronicles.\"*",
+              "*\"The Quickening brings new power.\"*"
+            ];
+            changelog += `${quotes[Math.floor(Math.random() * quotes.length)]}\n\n`;
+            
+            // Add categorized changes
+            for (const [category, items] of Object.entries(categories)) {
+              if (items.length > 0) {
+                changelog += `## ${category}\n\n`;
+                items.forEach(item => {
+                  changelog += `${item}\n`;
+                });
+                changelog += '\n';
+              }
+            }
+            
+            // Add statistics
+            changelog += '## 📊 Release Statistics\n\n';
+            changelog += `- **Commits**: ${commits.commits.length}\n`;
+            changelog += `- **Contributors**: ${contributors.size}\n`;
+            changelog += `- **Pull Requests**: ${prNumbers.size}\n`;
+            
+            if (prevTag) {
+              const daysDiff = Math.floor(
+                (new Date() - new Date(commits.base_commit.commit.author.date)) / 
+                (1000 * 60 * 60 * 24)
+              );
+              changelog += `- **Days since last release**: ${daysDiff}\n`;
+            }
+            
+            changelog += '\n';
+            
+            // Add contributors section
+            if (contributors.size > 0) {
+              changelog += '## 👥 Contributors\n\n';
+              changelog += 'Thank you to all the immortals who contributed to this release:\n\n';
+              Array.from(contributors).sort().forEach(contributor => {
+                changelog += `- @${contributor}\n`;
+              });
+              changelog += '\n';
+            }
+            
+            // Add comparison link
+            if (prevTag) {
+              changelog += `## 🔗 Full Changelog\n\n`;
+              changelog += `**[${prevTag}...${tag}](https://github.com/${context.repo.owner}/${context.repo.repo}/compare/${prevTag}...${tag})**\n\n`;
+            }
+            
+            // Add footer
+            changelog += '---\n\n';
+            changelog += '*Generated by The Nash Group Release Automation*\n';
+            changelog += '*For more information, see [The Chronicles](https://github.com/the-nash-group/docs-chronicles)*';
+            
+            return changelog;
+      
+      - name: Check if Release Exists
+        id: check_release
+        run: |
+          if gh release view ${{ steps.tag.outputs.tag }} > /dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Create or Update Release
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = '${{ steps.tag.outputs.tag }}';
+            const changelog = ${{ steps.changelog.outputs.result }};
+            const releaseExists = '${{ steps.check_release.outputs.exists }}' === 'true';
+            
+            const isPrerelease = tag.includes('-alpha') || 
+                                tag.includes('-beta') || 
+                                tag.includes('-rc');
+            
+            const releaseName = `${tag} - ${new Date().toLocaleDateString('en-US', { 
+              month: 'long', 
+              day: 'numeric', 
+              year: 'numeric' 
+            })}`;
+            
+            if (releaseExists) {
+              // Update existing release
+              const { data: release } = await github.rest.repos.getReleaseByTag({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag: tag
+              });
+              
+              await github.rest.repos.updateRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                release_id: release.id,
+                name: releaseName,
+                body: changelog,
+                prerelease: isPrerelease
+              });
+              
+              console.log(`Updated release for ${tag}`);
+            } else {
+              // Create new release
+              await github.rest.repos.createRelease({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                tag_name: tag,
+                name: releaseName,
+                body: changelog,
+                draft: false,
+                prerelease: isPrerelease
+              });
+              
+              console.log(`Created release for ${tag}`);
+            }
+      
+      - name: Post to Discord/Slack
+        if: success()
+        run: |
+          echo "Would post release notification to Discord/Slack"
+          # In production, add webhook notifications here

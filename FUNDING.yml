@@ -1,0 +1,29 @@
+# The Nash Group Patronage
+# =========================
+# 
+# Support the eternal development of The Nash Group's systems.
+# Like ancient patrons who funded master craftsmen, your support
+# ensures our work endures through the ages.
+#
+# "Every Immortal needs resources to maintain their edge."
+
+# GitHub Sponsors
+github: [the-nash-group]
+
+# Open Collective
+open_collective: the-nash-group
+
+# Custom Funding Links
+custom:
+  - "https://thenashgroup.dev/support"
+  - "https://thenashgroup.dev/the-prize"
+
+# Uncomment below when/if these are set up:
+# patreon: TheNashGroup
+# ko_fi: thenashgroup
+# tidelift: npm/the-nash-group
+# community_bridge: the-nash-group
+# liberapay: TheNashGroup
+# issuehunt: the-nash-group
+# otechie: the-nash-group
+# lfx_crowdfunding: the-nash-group

@@ -1,0 +1,141 @@
+name: 🗡️ Report a Battle Scar (Bug Report)
+description: Help us heal wounds in the system
+title: "[BUG] "
+labels: ["bug", "needs-triage"]
+assignees: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        ## The Wound Must Be Chronicled
+        
+        Thank you for taking the time to report this issue. Like all immortals, our systems bear scars from countless battles. Your detailed report helps us heal these wounds and emerge stronger.
+        
+        *"Every scar has a story. Make sure yours is worth telling."*
+
+  - type: dropdown
+    id: service
+    attributes:
+      label: Affected Service
+      description: Which component of The Nash Group ecosystem is affected?
+      options:
+        - The Gathering (Gateway)
+        - The Prize (MCP-Docs)
+        - The Watcher (Service Catalog)
+        - Holy Ground (Secrets Management)
+        - Methos (Budgeteer)
+        - The Quickening (Observability)
+        - The Sword (CLI)
+        - The Katana (Dotfiles)
+        - The Antique Shop (Ledger)
+        - Other/Unknown
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: The Tale of the Bug
+      description: Describe what happened. Be as detailed as an immortal recounting a centuries-old duel.
+      placeholder: |
+        When I attempted to [action], the system responded with [unexpected behavior].
+        I expected [expected behavior] based on [reasoning].
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to Recreate the Battle
+      description: How can we reproduce this issue? Provide exact steps.
+      placeholder: |
+        1. Navigate to '...'
+        2. Execute command '...'
+        3. Observe the anomaly
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Outcome
+      description: What should have happened?
+      placeholder: The system should have...
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Outcome
+      description: What actually happened?
+      placeholder: Instead, the system...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Chronicles of the Error (Logs)
+      description: |
+        Please provide any relevant log output. 
+        This will be automatically formatted as code.
+      render: shell
+      placeholder: |
+        Paste error messages, stack traces, or relevant log entries here
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity of the Wound
+      description: How critical is this issue?
+      options:
+        - 🩹 Flesh Wound (Minor inconvenience)
+        - ⚔️ Battle Scar (Moderate impact)
+        - 🗡️ Deep Cut (Significant impact)
+        - 💀 Mortal Wound (Critical/Blocking)
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: The Battlefield (Environment)
+      description: Describe your environment
+      placeholder: |
+        - OS: [e.g., macOS 14.0, Ubuntu 22.04]
+        - Service Version: [e.g., v1.2.3]
+        - CLI Version: [if applicable]
+        - Runtime: [e.g., Node 20.x, Python 3.11]
+      value: |
+        - OS: 
+        - Service Version: 
+        - CLI Version: 
+        - Runtime: 
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional Context
+      description: |
+        Add any other context about the problem here.
+        Screenshots, related issues, or potential solutions are welcome.
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: The Immortal's Oath
+      description: By submitting this issue, you agree to follow our Code of Conduct
+      options:
+        - label: I have searched existing issues to ensure this is not a duplicate
+          required: true
+        - label: I have consulted The Chronicles (documentation) for answers
+          required: true
+        - label: I am willing to assist in resolving this issue if needed
+          required: false
