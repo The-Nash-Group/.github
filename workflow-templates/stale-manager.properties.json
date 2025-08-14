@@ -1,0 +1,12 @@
+{
+  "name": "Stale Issue and PR Manager",
+  "description": "Automatically marks and closes stale issues and pull requests",
+  "iconName": "octicon clock",
+  "categories": [
+    "automation",
+    "project-management"
+  ],
+  "filePatterns": [
+    ".*"
+  ]
+}

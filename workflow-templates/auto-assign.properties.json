@@ -1,0 +1,12 @@
+{
+  "name": "Auto Assign PR Reviewers",
+  "description": "Automatically assigns reviewers to pull requests based on CODEOWNERS",
+  "iconName": "octicon person-add",
+  "categories": [
+    "automation",
+    "code-review"
+  ],
+  "filePatterns": [
+    ".*"
+  ]
+}

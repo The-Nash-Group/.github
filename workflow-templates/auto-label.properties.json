@@ -1,0 +1,12 @@
+{
+  "name": "Auto Label PRs and Issues",
+  "description": "Automatically labels pull requests and issues based on file changes and content",
+  "iconName": "octicon tag",
+  "categories": [
+    "automation",
+    "project-management"
+  ],
+  "filePatterns": [
+    ".*"
+  ]
+}

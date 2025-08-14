@@ -1,0 +1,12 @@
+{
+  "name": "CI Enforcer",
+  "description": "Enforces continuous integration standards and quality gates",
+  "iconName": "octicon shield-check",
+  "categories": [
+    "continuous-integration",
+    "code-quality"
+  ],
+  "filePatterns": [
+    ".*\\.(js|ts|py|go|rs)$"
+  ]
+}

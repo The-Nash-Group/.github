@@ -1,0 +1,12 @@
+{
+  "name": "Release Notes Generator",
+  "description": "Automatically generates release notes from commits and pull requests",
+  "iconName": "octicon milestone",
+  "categories": [
+    "deployment",
+    "automation"
+  ],
+  "filePatterns": [
+    ".*"
+  ]
+}
